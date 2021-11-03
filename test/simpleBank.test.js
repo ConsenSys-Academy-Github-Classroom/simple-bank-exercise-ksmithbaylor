@@ -8,10 +8,10 @@ installed, you can uninstall the existing version with `npm uninstall -g truffle
 with `npm install -g truffle`.
 
 */
-const { catchRevert } = require("./exceptionsHelpers.js");
-var SimpleBank = artifacts.require("./SimpleBank.sol");
+const { catchRevert } = require('./exceptionsHelpers.js');
+var SimpleBank = artifacts.require('./SimpleBank.sol');
 
-contract("SimpleBank", function (accounts) {
+contract('SimpleBank', function (accounts) {
   const [contractOwner, alice] = accounts;
   const deposit = web3.utils.toBN(2);
 
@@ -19,12 +19,12 @@ contract("SimpleBank", function (accounts) {
     instance = await SimpleBank.new();
   });
 
-  it("ready to be solved!", async() => {
+  it('ready to be solved!', async () => {
     const eth100 = 100e18;
     assert.equal(await web3.eth.getBalance(alice), eth100.toString());
   });
 
-  it("is owned by owner", async () => {
+  it('is owned by owner', async () => {
     assert.equal(
       // Hint:
       //   the error `TypeError: Cannot read property 'call' of undefined`
@@ -34,31 +34,33 @@ contract("SimpleBank", function (accounts) {
       //   2: https://docs.soliditylang.org/en/v0.8.5/contracts.html#getter-functions
       await instance.owner.call(),
       contractOwner,
-      "owner is not correct",
+      'owner is not correct'
     );
   });
 
-  it("should mark addresses as enrolled", async () => {
+  it('should mark addresses as enrolled', async () => {
     await instance.enroll({ from: alice });
 
     const aliceEnrolled = await instance.enrolled(alice, { from: alice });
     assert.equal(
       aliceEnrolled,
       true,
-      "enroll balance is incorrect, check balance method or constructor",
+      'enroll balance is incorrect, check balance method or constructor'
     );
   });
 
-  it("should not mark unenrolled users as enrolled", async () => {
-    const ownerEnrolled = await instance.enrolled(contractOwner, { from: contractOwner });
+  it('should not mark unenrolled users as enrolled', async () => {
+    const ownerEnrolled = await instance.enrolled(contractOwner, {
+      from: contractOwner
+    });
     assert.equal(
       ownerEnrolled,
       false,
-      "only enrolled users should be marked enrolled",
+      'only enrolled users should be marked enrolled'
     );
   });
 
-  it("should deposit correct amount", async () => {
+  it('should deposit correct amount', async () => {
     await instance.enroll({ from: alice });
     await instance.deposit({ from: alice, value: deposit });
     const balance = await instance.getBalance.call({ from: alice });
@@ -66,11 +68,11 @@ contract("SimpleBank", function (accounts) {
     assert.equal(
       deposit.toString(),
       balance,
-      "deposit amount incorrect, check deposit method",
+      'deposit amount incorrect, check deposit method'
     );
   });
 
-  it("should log a deposit event when a deposit is made", async () => {
+  it('should log a deposit event when a deposit is made', async () => {
     await instance.enroll({ from: alice });
     const result = await instance.deposit({ from: alice, value: deposit });
 
@@ -82,17 +84,17 @@ contract("SimpleBank", function (accounts) {
     assert.equal(
       expectedEventResult.accountAddress,
       logAccountAddress,
-      "LogDepositMade event accountAddress property not emitted, check deposit method",
+      'LogDepositMade event accountAddress property not emitted, check deposit method'
     );
 
     assert.equal(
       expectedEventResult.amount,
       logDepositAmount,
-      "LogDepositMade event amount property not emitted, check deposit method",
+      'LogDepositMade event amount property not emitted, check deposit method'
     );
   });
 
-  it("should withdraw correct amount", async () => {
+  it('should withdraw correct amount', async () => {
     const initialAmount = 0;
     await instance.enroll({ from: alice });
     await instance.deposit({ from: alice, value: deposit });
@@ -102,17 +104,17 @@ contract("SimpleBank", function (accounts) {
     assert.equal(
       balance.toString(),
       initialAmount.toString(),
-      "balance incorrect after withdrawal, check withdraw method",
+      'balance incorrect after withdrawal, check withdraw method'
     );
   });
 
-  it("should not be able to withdraw more than has been deposited", async () => {
+  it('should not be able to withdraw more than has been deposited', async () => {
     await instance.enroll({ from: alice });
     await instance.deposit({ from: alice, value: deposit });
     await catchRevert(instance.withdraw(deposit + 1, { from: alice }));
   });
 
-  it("should emit the appropriate event when a withdrawal is made", async () => {
+  it('should emit the appropriate event when a withdrawal is made', async () => {
     const initialAmount = 0;
     await instance.enroll({ from: alice });
     await instance.deposit({ from: alice, value: deposit });
@@ -125,23 +127,23 @@ contract("SimpleBank", function (accounts) {
     const expectedEventResult = {
       accountAddress: alice,
       newBalance: initialAmount,
-      withdrawAmount: deposit,
+      withdrawAmount: deposit
     };
 
     assert.equal(
       expectedEventResult.accountAddress,
       accountAddress,
-      "LogWithdrawal event accountAddress property not emitted, check deposit method",
+      'LogWithdrawal event accountAddress property not emitted, check deposit method'
     );
     assert.equal(
       expectedEventResult.newBalance,
       newBalance,
-      "LogWithdrawal event newBalance property not emitted, check deposit method",
+      'LogWithdrawal event newBalance property not emitted, check deposit method'
     );
     assert.equal(
       expectedEventResult.withdrawAmount,
       withdrawAmount,
-      "LogWithdrawal event withdrawalAmount property not emitted, check deposit method",
+      'LogWithdrawal event withdrawalAmount property not emitted, check deposit method'
     );
   });
 });
