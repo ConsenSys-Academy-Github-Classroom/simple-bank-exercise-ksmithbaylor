@@ -11,7 +11,7 @@ contract SimpleBank {
     /* State variables
      */
     
-    mapping (address => uint) private balances;
+    mapping (address => uint) private _balances;
     
     mapping (address => bool) private _enrolled;
 
@@ -20,17 +20,20 @@ contract SimpleBank {
     /* Events - publicize actions to external listeners
      */
     
-    // Add an argument for this event, an accountAddress
     event LogEnrolled(
-        address accountAddress
+        address indexed accountAddress
     );
 
-    // Add 2 arguments for this event, an accountAddress and an amount
-    event LogDepositMade();
+    event LogDepositMade(
+        address indexed accountAddress,
+        uint amount
+    );
 
-    // Create an event called LogWithdrawal
-    // Hint: it should take 3 arguments: an accountAddress, withdrawAmount and a newBalance 
-    event LogWithdrawal();
+    event LogWithdrawal(
+        address indexed accountAddress,
+        uint newBalance,
+        uint withdrawAmount
+    );
 
     /* Functions
      */
@@ -45,10 +48,8 @@ contract SimpleBank {
 
     /// @notice Get balance
     /// @return The balance of the user
-    function getBalance() public returns (uint) {
-      // 1. A SPECIAL KEYWORD prevents function from editing state variables;
-      //    allows function to run locally/off blockchain
-      // 2. Get the balance of the sender of this transaction
+    function getBalance() public view returns (uint) {
+        return _balances[msg.sender];
     }
 
     /// @notice Enroll a customer with the bank
@@ -68,17 +69,17 @@ contract SimpleBank {
 
     /// @notice Deposit ether into bank
     /// @return The balance of the user after the deposit is made
-    function deposit() public returns (uint) {
-      // 1. Add the appropriate keyword so that this function can receive ether
-    
-      // 2. Users should be enrolled before they can make deposits
+    function deposit() public payable returns (uint) {
+        require(_enrolled[msg.sender], 'User must be enrolled to deposit');
 
-      // 3. Add the amount to the user's balance. Hint: the amount can be
-      //    accessed from of the global variable `msg`
+        uint oldBalance = _balances[msg.sender];
+        uint newBalance = oldBalance + msg.value;
 
-      // 4. Emit the appropriate event associated with this function
+        _balances[msg.sender] = newBalance;
 
-      // 5. return the balance of sndr of this transaction
+        emit LogDepositMade(msg.sender, msg.value);
+
+        return newBalance;
     }
 
     /// @notice Withdraw ether from bank
@@ -86,16 +87,16 @@ contract SimpleBank {
     /// @param withdrawAmount amount you want to withdraw
     /// @return The balance remaining for the user
     function withdraw(uint withdrawAmount) public returns (uint) {
-      // If the sender's balance is at least the amount they want to withdraw,
-      // Subtract the amount from the sender's balance, and try to send that amount of ether
-      // to the user attempting to withdraw. 
-      // return the user's balance.
+        require(withdrawAmount <= _balances[msg.sender], 'Insufficient balance');
 
-      // 1. Use a require expression to guard/ensure sender has enough funds
+        // Deduct from balance first to prevent reentrancy attack
+        uint newBalance = _balances[msg.sender] - withdrawAmount;
+        _balances[msg.sender] = newBalance;
 
-      // 2. Transfer Eth to the sender and decrement the withdrawal amount from
-      //    sender's balance
+        payable(msg.sender).transfer(withdrawAmount);
 
-      // 3. Emit the appropriate event for this message
+        emit LogWithdrawal(msg.sender, newBalance, withdrawAmount);
+
+        return newBalance;
     }
 }
